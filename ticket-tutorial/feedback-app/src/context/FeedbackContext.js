@@ -1,39 +1,39 @@
-import { createContext, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { createContext, useState, useEffect, useC } from 'react';
 
 const FeedbackContext = createContext();
 
 export const FeedbackProvider = ({ children }) => {
-  const [feedback, setFeedback] = useState([
-    {
-      id: 1,
-      text: 'This item is from context 3',
-      rating: 5,
-    },
-    {
-      id: 2,
-      text: 'This item is from context 32',
-      rating: 5,
-    },
-    {
-      id: 3,
-      text: 'This item is from context 1',
-      rating: 5,
-    },
-  ]);
+  const [feedback, setFeedback] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    fetchFeedback();
+  }, []);
+  const fetchFeedback = async () => {
+    const response = await fetch('feedback?_sort=id&_order=desc');
+    const data = await response.json();
+    setFeedback(data);
+    isLoading = false;
+  };
   const [feedbackEdit, setFeedbackEdit] = useState({
     item: {},
     edit: false,
   });
 
+  const addFeedback = async (newFeedback) => {
+    const response = await fetch('/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application.json',
+      },
+      body: JSON.stringify(newFeedback),
+    });
+
+    const data = await response.json();
+    setFeedback([data], ...feedback);
+  };
   const deleteFeedback = (id) => {
     setFeedback(feedback.filter((item) => item.id !== id));
-  };
-
-  const addFeedback = (newFeedback) => {
-    newFeedback.id = uuidv4();
-    setFeedback([newFeedback, ...feedback]);
   };
 
   const editFeedback = (item) => {
@@ -58,6 +58,7 @@ export const FeedbackProvider = ({ children }) => {
         editFeedback,
         feedbackEdit,
         updateFeedback,
+        isLoading,
       }}
     >
       {children}
